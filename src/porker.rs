@@ -135,11 +135,7 @@ pub fn is_strait(cards: &mut [Card; 5]) -> bool {
         }
     }
 
-    if is_strait_1 || is_strait_2 {
-        true
-    } else {
-        false
-    }
+    is_strait_1 || is_strait_2
 }
 
 pub fn is_royalflush(cards: &[Card; 5]) -> bool {
@@ -154,15 +150,11 @@ pub fn is_royalflush(cards: &[Card; 5]) -> bool {
         }
     }
 
-    return is_royalflush;
+    is_royalflush
 }
 
 pub fn is_straitflush(cards: &mut [Card; 5]) -> bool {
-    if is_strait(cards) && is_flush(cards) {
-        return true;
-    } else {
-        return false;
-    }
+    is_strait(cards) && is_flush(cards)
 }
 
 pub fn is_twopair(cards: &[Card; 5]) -> bool {
@@ -180,7 +172,7 @@ pub fn is_twopair(cards: &[Card; 5]) -> bool {
         }
     }
 
-    if count1 == false {
+    if !count1 {
         return false;
     }
 
@@ -198,11 +190,7 @@ pub fn is_twopair(cards: &[Card; 5]) -> bool {
         }
     }
 
-    if count1 && count2 {
-        true
-    } else {
-        false
-    }
+    count1 && count2
 }
 
 pub fn is_fulhouse(cards: &mut [Card; 5]) -> bool {
@@ -224,11 +212,7 @@ pub fn is_fulhouse(cards: &mut [Card; 5]) -> bool {
         && cards[4].rank == cards[3].rank
     ;
 
-    if is_fulhouse_1 || is_fulhouse_2 {
-        true
-    } else {
-        false
-    }
+    is_fulhouse_1 || is_fulhouse_2
 }
 
 pub fn is_onepair(cards: &[Card; 5]) -> bool {

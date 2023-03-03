@@ -40,7 +40,7 @@ fn straitflush() {
     assert!(is_straitflush(&mut cards));
     let mut cards = create_test_cards([0, 2, 5, 8, 12]);
     assert!(!is_straitflush(&mut cards));
-    let mut cards = create_test_cards([0 + 13, 2 + 13, 5 + 13, 8 + 13, 12 + 13]);
+    let mut cards = create_test_cards([13, 2 + 13, 5 + 13, 8 + 13, 12 + 13]);
     assert!(!is_straitflush(&mut cards));
     let mut cards = create_test_cards([0, 2, 3, 4, 5]);
     assert!(!is_straitflush(&mut cards));
@@ -52,9 +52,9 @@ fn straitflush() {
 fn fourair() {
     let cards = create_test_cards([0, 13, 26, 39, 4]);
     assert!(is_fourpair(&cards));
-    let cards = create_test_cards([0 + 5, 13 + 5, 26 + 5, 39 + 5, 4]);
+    let cards = create_test_cards([5, 13 + 5, 26 + 5, 39 + 5, 4]);
     assert!(is_fourpair(&cards));
-    let cards = create_test_cards([9, 13 + 3, 26 + 3, 39 + 3, 0 + 3]);
+    let cards = create_test_cards([9, 13 + 3, 26 + 3, 39 + 3, 3]);
     assert!(is_fourpair(&cards));
     let cards = create_test_cards([0, 13, 25, 39, 4]);
     assert!(!is_fourpair(&cards));
