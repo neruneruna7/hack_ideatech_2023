@@ -1,0 +1,15 @@
+openapi: "3.0.2"
+info:
+  title: Million Porker
+  version: "1.0"
+servers:
+  - url: 未定/ideaxtech/dev/
+paths:
+  /poker:
+    post:
+      description: 投げられた使用するカード一覧をもとに，指定回数ランダムな５枚のカードを選んで役判定する
+      parameters:
+        -
+      responses:
+        "200":
+          description: OK
