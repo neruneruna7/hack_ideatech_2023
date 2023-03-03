@@ -144,8 +144,8 @@ pub fn is_royalflush(cards: &[Card; 5]) -> bool {
     }
 
     let mut is_royalflush = true;
-    for i in 0..5 {
-        if cards[i].rank < 10 && cards[i].rank > 1 {
+    for i in cards.iter().take(5) {
+        if i.rank < 10 && i.rank > 1 {
             is_royalflush = false;
         }
     }
