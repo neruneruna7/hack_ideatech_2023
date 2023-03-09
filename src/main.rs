@@ -5,7 +5,7 @@
 use std::time;
 
 mod porker;
-
+mod db {}
 /*
 //jsonのリクエストのフィールド名と名前が一致するように
 //allowアトリビュートで名前がスネークケースでない警告を無視
@@ -43,8 +43,11 @@ fn main() {
 
     let mut role_count = [0; 10];
 
+    let num = 1_000_000;
+
     //let mut rng = rand_xoshiro::Xoshiro256StarStar::seed_from_u64(123);
 
+    /*
     for _ in 0..1_000_000 {
         let cards = porker::handout_cards(&use_cards);
 
@@ -58,6 +61,9 @@ fn main() {
 
         porker::count_judge_role(&mut cards, &mut role_count);
     }
+    */
+
+    porker::million_porker(&use_cards, &mut role_count, num);
 
     println!("{:?}", role_count);
 

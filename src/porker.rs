@@ -271,3 +271,19 @@ pub fn debug_judge_role(role_count: &[u32; 10], total_num_of_atempt: u32) {
         println!("{:<20}: {:.5}%", roles[i], rate[i] * 100.);
     }
 }
+
+pub fn million_porker<T>(use_cards: &Vec<u32>, role_count: &mut [u32; 10], num: T)
+where
+    T: TryInto<u32>,
+    <T as std::convert::TryInto<u32>>::Error: std::fmt::Debug,
+{   
+    let num:u32 = num.try_into().expect("ERR 回数を整数に変換できません");
+
+    for _ in 0..num as u32{
+        let cards = handout_cards(use_cards);
+
+        let mut cards = make_cards_from_id(&cards);
+
+        count_judge_role(&mut cards, role_count);
+    }
+}
