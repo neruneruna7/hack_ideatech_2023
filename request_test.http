@@ -1,3 +1,4 @@
+//VScodeの REST Client拡張機能を使ってリクエストの動作確認するためのファイルです．
 //GET http://localhost:5000/Una
 
 POST http://localhost:5000/postcards HTTP/1.1
