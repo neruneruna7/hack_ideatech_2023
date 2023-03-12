@@ -1,3 +1,5 @@
+//! ポーカーモジュール
+
 //use rand::prelude::*;
 //use rand::rngs::SmallRng;
 use rand::{thread_rng, Rng};
@@ -7,6 +9,7 @@ use std::convert::TryInto;
 #[cfg(test)]
 mod test;
 
+///カード1枚のデータを保持する構造体です．ID,スート(記号), ランク(数字)からできています．
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Card {
     pub id: u32,
@@ -15,6 +18,7 @@ pub struct Card {
 }
 
 impl Card {
+    ///IDを渡すことで，スートとランクを計算し，Card型を生成します．
     pub fn new<T>(id: T) -> Card
     where
         T: TryInto<u32>,
@@ -26,8 +30,8 @@ impl Card {
         Card { id, suit, rank }
     }
 
+    ///デバッグ用に52枚すべてのカードidをもったベクタを返します．
     #[allow(unused)]
-    //テスト用に52枚すべてのカードidを返す
     pub fn all_cards_id() -> Vec<u32> {
         let mut cards = Vec::new();
 
@@ -39,8 +43,7 @@ impl Card {
     }
 }
 
-//使うカードのidを読み込んでカード型に変換
-//ここで変換しなくても，idを見て重複しないように配った方が速いな
+///手札のカードのid配列を読み込んでCard型配列に変換します．
 pub fn make_cards_from_id(cards_id: &[u32; 5]) -> [Card; 5] {
     let mut cards = [Card {
         id: 0,
@@ -55,7 +58,7 @@ pub fn make_cards_from_id(cards_id: &[u32; 5]) -> [Card; 5] {
     cards
 }
 
-//使うカードから手札を５枚配る
+/// 使用するカードのID一覧を持つベクタから，ランダムに選んだ5枚で手札ID配列を生成します
 pub fn handout_cards(use_cards: &Vec<u32>) -> [u32; 5] {
     //ハッシュマップに突っ込むx5した方が早いかも？
     //重複回避のためのハッシュマップ
@@ -88,6 +91,7 @@ pub fn handout_cards(use_cards: &Vec<u32>) -> [u32; 5] {
 
     handout_id
 }
+
 
 pub fn is_pair(cards: &[Card; 5], pair_num: u32) -> bool {
     //同じランクのカードがpair_num個あるかどうか
@@ -228,6 +232,7 @@ pub fn is_fourpair(cards: &[Card; 5]) -> bool {
     is_pair(cards, 4)
 }
 
+/// 役判定を行います.
 pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) {
     if is_royalflush(cards) {
         role_count[9] += 1;
@@ -252,6 +257,7 @@ pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) {
     }
 }
 
+/// デバッグ用に，それぞれの役が出る確率を計算して表示します．
 pub fn debug_judge_role(role_count: &[u32; 10], total_num_of_atempt: u32) {
     let roles = [
         "ノーペア",
@@ -274,15 +280,26 @@ pub fn debug_judge_role(role_count: &[u32; 10], total_num_of_atempt: u32) {
     println!();
 }
 
-pub fn million_porker<T>(use_cards: &Vec<u32>, num: T) -> [u32;10]
+/// 必要な処理がひとまとめになった関数です．
+/// 回数制限，手札選び，役判定，指定回数ループ，スコア計算
+/// 事実上，pubキーワードはこの関数にのみついていれば問題ありません．
+pub fn million_porker<T>(use_cards: &Vec<u32>, num: T) -> ([u32;10], u32, u32)
 where
     T: TryInto<u32>,
     <T as std::convert::TryInto<u32>>::Error: std::fmt::Debug,
 {   
     let num:u32 = num.try_into().expect("ERR 回数を整数に変換できません");
+
+    //ループ回数が100万回を超えていたら，100万回まで減らす
+    let loop_num = if num > 1_000_000 {
+        1_000_000
+    } else {
+        num
+    };
+
     let mut role_count= [0; 10] ;
 
-    for _ in 0..num{
+    for _ in 0..loop_num{
         //カードをランダムに5枚選び出す（idのみ）
         let cards = handout_cards(use_cards);
         //idからCard型を生成する
@@ -290,10 +307,13 @@ where
 
         count_judge_role(&mut cards, &mut role_count);
     }
+
+    let sum_score = calc_score(&role_count);
     
-    role_count
+    (role_count, sum_score, loop_num)
 }
 
+/// 総スコアを計算します．
 pub fn calc_score(role_count: &[u32;10]) -> u32 {
     /*indexの小さい順に
         ノーペア,

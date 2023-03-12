@@ -1,3 +1,5 @@
+//! ideaxtechで作ったソースコードです．Cargo docコマンドを使ってみようということで，一応ドキュメントにしてみました．
+
 use actix_web::middleware::Logger;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
@@ -5,6 +7,8 @@ use serde::{Deserialize, Serialize};
 
 mod porker;
 
+/// POSTされたデータを受け取るための構造体です．
+/// 回数，使うカードのIDベクタ
 //jsonのリクエストのフィールド名と名前が一致するように
 //allowアトリビュートで名前がスネークケースでない警告を無視
 #[derive(Deserialize)]
@@ -14,6 +18,8 @@ struct Request {
     useCards: Vec<u32>,
 }
 
+/// それぞれの役が何回出たか保持する構造体です．
+/// Response構造体の一部分でもあります．
 #[derive(Serialize)]
 #[allow(non_snake_case)]
 struct ResultRole {
@@ -29,6 +35,8 @@ struct ResultRole {
     royalflush: u32,
 }
 
+/// 実行結果を保存する構造体です．
+/// 総スコア，回数，それぞれの役の出現回数
 #[derive(Serialize)]
 #[allow(non_snake_case)]
 struct Response {
@@ -37,6 +45,7 @@ struct Response {
     result: ResultRole,
 }
 
+///必要なデータを渡すと，レスポンスを生成します．
 impl Response {
     fn new(all_score: u32, number: u32, role_count: [u32; 10]) -> Response {
         Response {
@@ -58,33 +67,31 @@ impl Response {
     }
 }
 
+/// 使うカードのデータをPOSTすると，指定回数ランダムに手札を取り出し役判定します．
+/// スコア計算も行い，レスポンスを返します．
+/// 実行時間の都合上，最大回数を100万回に制限しています．
 #[post["/postcards"]]
 async fn judge_porker(request: web::Json<Request>) -> impl Responder {
-    //ループ回数が100万回を超えていたら，100万回まで減らす
-    let loop_num = if request.num > 1_000_000 {
-        1_000_000
-    } else {
-        request.num
-    };
-
-    let role_count = porker::million_porker(&request.useCards, loop_num);
+    let (role_count, sum_score, loop_num) = porker::million_porker(&request.useCards, request.num);
 
     porker::debug_judge_role(&role_count, loop_num);
-
-    let sum_score = porker::calc_score(&role_count);
 
     HttpResponse::Ok().json(Response::new(sum_score, loop_num, role_count))
 }
 
+///テスト用の関数です．特に意味はありません．helloを返します．
 #[get["/"]]
 async fn get_index() -> impl Responder {
-    HttpResponse::Ok().body("Hello!")
+    HttpResponse::Ok().body("hello")
 }
 
+///テスト用の関数です．特に意味はありません．401コードを返します．
 #[get["/Una"]]
 async fn una() -> impl Responder {
     HttpResponse::Unauthorized().body("401 Unauthrized")
 }
+
+///エントリーポイントです．
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
@@ -101,6 +108,7 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+//ここから下はデバッグ用に使ったコード
 /*
 fn main() {
     let now = time::Instant::now();
