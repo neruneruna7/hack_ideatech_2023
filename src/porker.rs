@@ -26,6 +26,7 @@ impl Card {
         Card { id, suit, rank }
     }
 
+    #[allow(unused)]
     //テスト用に52枚すべてのカードidを返す
     pub fn all_cards_id() -> Vec<u32> {
         let mut cards = Vec::new();
@@ -273,12 +274,13 @@ pub fn debug_judge_role(role_count: &[u32; 10], total_num_of_atempt: u32) {
     println!();
 }
 
-pub fn million_porker<T>(use_cards: &Vec<u32>, role_count: &mut [u32; 10], num: T)
+pub fn million_porker<T>(use_cards: &Vec<u32>, num: T) -> [u32;10]
 where
     T: TryInto<u32>,
     <T as std::convert::TryInto<u32>>::Error: std::fmt::Debug,
 {   
     let num:u32 = num.try_into().expect("ERR 回数を整数に変換できません");
+    let mut role_count= [0; 10] ;
 
     for _ in 0..num{
         //カードをランダムに5枚選び出す（idのみ）
@@ -286,6 +288,31 @@ where
         //idからCard型を生成する
         let mut cards = make_cards_from_id(&cards);
 
-        count_judge_role(&mut cards, role_count);
+        count_judge_role(&mut cards, &mut role_count);
     }
+    
+    role_count
+}
+
+pub fn calc_score(role_count: &[u32;10]) -> u32 {
+    /*indexの小さい順に
+        ノーペア,
+        ワンペア,
+        ツーペア,
+        スリーカード,
+        フォーカード,
+        フルハウス,
+        フラッシュ,
+        ストレート,
+        ストレートフラッシュ,
+        ロイヤルストレートフラッシュ, 
+    */
+    let score_sheet = [1, 5, 10, 20, 100, 150, 200, 500, 800, 1500];
+
+    let sum_score:u32 = role_count.iter()
+        .zip(score_sheet.iter())
+        .map(|x| x.0 * x.1)
+        .sum();
+
+    sum_score
 }

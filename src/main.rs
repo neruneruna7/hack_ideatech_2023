@@ -1,5 +1,3 @@
-use std::result;
-
 use actix_web::middleware::Logger;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
@@ -69,13 +67,13 @@ async fn judge_porker(request: web::Json<Request>) -> impl Responder {
         request.num
     };
 
-    let mut role_count = [0; 10];
-
-    porker::million_porker(&request.useCards, &mut role_count, loop_num);
+    let role_count = porker::million_porker(&request.useCards, loop_num);
 
     porker::debug_judge_role(&role_count, loop_num);
 
-    HttpResponse::Ok().json(Response::new(1000, loop_num, role_count))
+    let sum_score = porker::calc_score(&role_count);
+
+    HttpResponse::Ok().json(Response::new(sum_score, loop_num, role_count))
 }
 
 #[get["/"]]
