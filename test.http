@@ -1,0 +1,22 @@
+//GET http://localhost:5000/Una
+
+POST http://localhost:5000/postcards HTTP/1.1
+Content-Type: application/json
+
+{
+    "num": 1000000,
+    "useCards":[
+        0,
+        9,
+        10,
+        11,
+        12,
+        5,
+        11,
+        12,
+        23,
+        24,
+        15,
+        16
+    ]
+}

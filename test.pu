@@ -1,9 +1,0 @@
-@startuml test
-hide circle
-skinparam Linetype ortho
-
-entity "user" as user {
-    * id : integer : pk 
-}
-
-@enduml

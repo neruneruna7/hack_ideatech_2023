@@ -270,6 +270,7 @@ pub fn debug_judge_role(role_count: &[u32; 10], total_num_of_atempt: u32) {
         rate[i] = role_count[i] as f64 / total_num_of_atempt as f64;
         println!("{:<20}: {:.5}%", roles[i], rate[i] * 100.);
     }
+    println!();
 }
 
 pub fn million_porker<T>(use_cards: &Vec<u32>, role_count: &mut [u32; 10], num: T)
@@ -279,9 +280,10 @@ where
 {   
     let num:u32 = num.try_into().expect("ERR 回数を整数に変換できません");
 
-    for _ in 0..num as u32{
+    for _ in 0..num{
+        //カードをランダムに5枚選び出す（idのみ）
         let cards = handout_cards(use_cards);
-
+        //idからCard型を生成する
         let mut cards = make_cards_from_id(&cards);
 
         count_judge_role(&mut cards, role_count);
