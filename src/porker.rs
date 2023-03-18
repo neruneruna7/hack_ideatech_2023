@@ -4,7 +4,7 @@
 //use rand::rngs::SmallRng;
 use rand::{thread_rng, Rng};
 use rustc_hash::FxHashMap;
-use std::{convert::TryInto, default};
+use std::{convert::TryInto};
 use num_derive::FromPrimitive;
 
 
@@ -29,7 +29,6 @@ pub enum Suit {
     Diamond,
     Club,
 }
-
 
 impl Card {
     ///IDを渡すことで，スートとランクを計算し，Card型を生成します．
@@ -128,25 +127,21 @@ pub fn is_pair(cards: &[Card; 5], pair_num: u32) -> bool {
 }
 
 pub fn is_flush(cards: &[Card; 5]) -> bool {
-    //すべてのスートが同じかどうか
+    // すべてのスートが同じかどうか
     cards.iter().all(|x| x.suit == cards[0].suit)
 }
 
 pub fn is_strait(cards: &mut [Card; 5]) -> bool {
+    // すべてのランクが連続しているかどうか
+    
+    // エースハイストレートの場合は，1, 10, 11, 12, 13となる．
+    const ACE_HIGH: [u32; 5] = [1, 10, 11, 12, 13];
+    
+    // カード配列をrankをキーにソート． 安定ソートである必要はないため，unstable で不安定ソートを使うことにより高速化
     cards.sort_unstable_by(|a, b| a.rank.cmp(&b.rank));
 
-    let is_strait_1 = cards[0].rank == 1
-        && cards[1].rank == 10
-        && cards[2].rank == 11
-        && cards[3].rank == 12
-        && cards[4].rank == 13;
-
-    let mut is_strait_2 = true;
-    for i in 0..4 {
-        if cards[i].rank + 1 != cards[i + 1].rank {
-            is_strait_2 = false;
-        }
-    }
+    let is_strait_1 = cards.iter().zip(ACE_HIGH.iter()).all(|(a, b)| a.rank == *b);
+    let is_strait_2 = (0..4).all(|i| cards[i].rank + 1 == cards[i + 1].rank);
 
     is_strait_1 || is_strait_2
 }
