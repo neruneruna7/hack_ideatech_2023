@@ -4,7 +4,7 @@ use rand::{thread_rng, Rng};
 use rustc_hash::FxHashMap;
 use std::{convert::TryInto};
 use num_derive::FromPrimitive;
-use anyhow::{anyhow, Error, Result, Context};
+use anyhow::{anyhow, Result};
 
 //mod test;
 
@@ -136,9 +136,9 @@ pub fn is_pair(cards: &[Card; 5]) -> PorkerResult<Role> {
         3 => Ok(Role::ThreeCard),
         2 => {
             if is_twopair(cards).is_some() {
-                return Ok(Role::TwoPair);
+                Ok(Role::TwoPair)
             }else{
-                return Ok(Role::OnePair);
+                Ok(Role::OnePair)
             }
         },
         1 => Ok(Role::NoPair),
@@ -149,9 +149,9 @@ pub fn is_pair(cards: &[Card; 5]) -> PorkerResult<Role> {
 pub fn is_flush(cards: &[Card; 5]) -> Option<Role> {
     // すべてのスートが同じかどうか
     if cards.iter().all(|x| x.suit == cards[0].suit) {
-        return Some(Role::Flush);
+        Some(Role::Flush)
     }else{
-        return None;
+        None
     }
 }
 
@@ -165,16 +165,14 @@ pub fn is_strait(cards: &mut [Card; 5]) -> Option<Role> {
     let is_strait_2 = (0..4).all(|i| cards[i].rank + 1 == cards[i + 1].rank);
 
     if is_strait_1 || is_strait_2 {
-        return Some(Role::Straight);
+        Some(Role::Straight)
     } else {
-        return None;
+        None
     }
 }
 
 pub fn is_royalflush(cards: &[Card; 5]) -> Option<Role> {
-    if is_flush(cards).is_none() {
-        return None;
-    }
+    is_flush(cards)?;
 
     let mut is_royalflush = Some(Role::RoyalStraightFlush);
     for i in cards.iter().take(5) {
@@ -188,9 +186,9 @@ pub fn is_royalflush(cards: &[Card; 5]) -> Option<Role> {
 
 pub fn is_straitflush(cards: &mut [Card; 5]) -> Option<Role> {
     if is_strait(cards).is_some() && is_flush(cards).is_some() {
-        return Some(Role::StraightFlush);
+        Some(Role::StraightFlush)
     } else {
-        return None;
+        None
     }
 }
 
@@ -228,9 +226,9 @@ pub fn is_twopair(cards: &[Card; 5]) -> Option<Role> {
     }
 
     if count1 && count2{
-        return Some(Role::TwoPair);
+        Some(Role::TwoPair)
     }else {
-        return None;
+        None
     }
 }
 
@@ -254,9 +252,9 @@ pub fn is_fulhouse(cards: &mut [Card; 5]) -> Option<Role> {
     ;
 
     if is_fulhouse_1 || is_fulhouse_2{
-        return Some(Role::FullHouse);
+        Some(Role::FullHouse)
     }else{
-        return None;
+        None
     }
 }
 

@@ -77,7 +77,7 @@ async fn judge_porker(request: web::Json<Request>) -> impl Responder {
     match porker::million_porker(&request.useCards, request.num) {
         Ok((role_count, sum_score, loop_num)) => {
             porker::debug_judge_role(&role_count, loop_num);
-            return HttpResponse::Ok().json(Response::new(sum_score, loop_num, role_count));
+            HttpResponse::Ok().json(Response::new(sum_score, loop_num, role_count))
         }
         Err(e) => HttpResponse::BadRequest().body(format!("{}", e)),
     }
@@ -94,9 +94,9 @@ async fn get_index() -> impl Responder {
 async fn una() -> impl Responder {
     let a = 1;
     if a == 1 {
-        HttpResponse::Ok().body("hello");
+        HttpResponse::Ok().body("hello")
     } else {
-        HttpResponse::Unauthorized().body("401 Unauthrized");
+        HttpResponse::Unauthorized().body("401 Unauthrized")
     }
 }
 
