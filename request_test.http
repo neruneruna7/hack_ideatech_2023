@@ -1,7 +1,7 @@
 //VScodeの REST Client拡張機能を使ってリクエストの動作確認するためのファイルです．
 //GET http://localhost:5000/Una
 
-POST http://localhost:5000/postcards HTTP/1.1
+POST http://localhost:5001/postcards HTTP/1.1
 Content-Type: application/json
 
 {
