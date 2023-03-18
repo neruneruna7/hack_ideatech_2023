@@ -77,9 +77,13 @@ async fn judge_porker(request: web::Json<Request>) -> impl Responder {
     match porker::million_porker(&request.useCards, request.num) {
         Ok((role_count, sum_score, loop_num)) => {
             porker::debug_judge_role(&role_count, loop_num);
+            println!("postcards Ok");
             HttpResponse::Ok().json(Response::new(sum_score, loop_num, role_count))
         }
-        Err(e) => HttpResponse::BadRequest().body(format!("{}", e)),
+        Err(e) => {
+            println!("postcards Err");
+            HttpResponse::BadRequest().body(format!("{}", e))
+        }
     }
 }
 

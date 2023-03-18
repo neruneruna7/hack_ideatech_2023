@@ -1,10 +1,12 @@
 //! ポーカーモジュール 個々の役を判定する関数は，事前にrankの順にソートされていることを前提としています．
 
+// anyhow入れてみたはいいものの，あまり使い方がわからない
+// ? をもっと有効活用できそうなものだが...
 use rand::{thread_rng, Rng};
 use rustc_hash::FxHashMap;
 use std::{convert::TryInto};
 use num_derive::FromPrimitive;
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow};
 
 //mod test;
 
@@ -88,13 +90,15 @@ pub fn make_cards_from_id(cards_id: &[u32; 5]) -> [Card; 5] {
 }
 
 /// 使用するカードのID一覧を持つベクタから，ランダムに選んだ5枚で手札ID配列を生成します
-pub fn handout_cards(use_cards: &Vec<u32>) -> [u32; 5] {
+pub fn handout_cards(use_cards: &Vec<u32>) -> PorkerResult<[u32; 5]> {
     // 重複回避のためにハッシュマップを使用しています
 
     let mut handout_hash = FxHashMap::default();
     let mut rng = thread_rng();
 
     // entryを使って重複をしないようにデータを挿入
+    // 重複しないカードが5枚未満の場合，エラーとなる
+    let mut count = 0;
     while handout_hash.iter().len() < 5 {
         let len = handout_hash.len();
         let num = rng.gen_range(0..use_cards.len());
@@ -107,6 +111,12 @@ pub fn handout_cards(use_cards: &Vec<u32>) -> [u32; 5] {
             handout_hash.insert(use_cards[num], len);
         }
         */
+
+        count += 1;
+
+        if count > 20 {
+            return Err(anyhow!("Error: Invalid useCards"));
+        }
     }
 
     //5枚だとわかっているので，ハッシュマップの値を配列に変換
@@ -116,13 +126,13 @@ pub fn handout_cards(use_cards: &Vec<u32>) -> [u32; 5] {
         handout_id[*value] = *key;
     }
 
-    handout_id
+    Ok(handout_id)
 }
 
 
 /// 同じランクのカードが何枚あるかを数え，その枚数に応じたRoleを返します．
-/// Roleを返せない場合，明確にエラーである（同じランクのカードが5枚以上あることになる）ため，Result型でエラーを返します．
-pub fn is_pair(cards: &[Card; 5]) -> PorkerResult<Role> {
+// 途中までResult型を返していましたが，設計上のミスだったためOption型を返すようになりました
+pub fn is_pair(cards: &[Card; 5]) -> Option<Role> {
     // 同じランクのカードが何枚あるかを数える．
     // 大幅な仕様変更がありました．
     let pair_count = (0..5)
@@ -132,17 +142,17 @@ pub fn is_pair(cards: &[Card; 5]) -> PorkerResult<Role> {
     
     // pair_countが2の場合はツーペアの可能性があるため，処理を分岐しています
     match pair_count {
-        4 => Ok(Role::FourCard),
-        3 => Ok(Role::ThreeCard),
+        4 => Some(Role::FourCard),
+        3 => Some(Role::ThreeCard),
         2 => {
             if is_twopair(cards).is_some() {
-                Ok(Role::TwoPair)
+                Some(Role::TwoPair)
             }else{
-                Ok(Role::OnePair)
+                Some(Role::OnePair)
             }
         },
-        1 => Ok(Role::NoPair),
-        _ => Err(anyhow!("同じランクのカードが5枚以上あります")),
+        1 => Some(Role::NoPair),
+        _ => None, 
     }
 }
 
@@ -259,7 +269,7 @@ pub fn is_fulhouse(cards: &mut [Card; 5]) -> Option<Role> {
 }
 
 /// 役判定を行います.
-pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) -> Result<(),  Box<dyn std::error::Error>>{
+pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]){
     // 事前にカード配列をソートしておく
     // カード配列をrankをキーにソート． 安定ソートである必要はないため，unstable で不安定ソートを使うことにより高速化
     cards.sort_unstable_by(|a, b| a.rank.cmp(&b.rank));
@@ -275,17 +285,15 @@ pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) -> Re
     } else if is_fulhouse(cards).is_some() {
         role_count[5] += 1;
     } else {
-        let r = is_pair(cards)?; 
-        match r {
-            Role::FourCard => role_count[4] += 1,
-            Role::ThreeCard => role_count[3] += 1,
-            Role::TwoPair => role_count[2] += 1,
-            Role::OnePair => role_count[1] += 1,
-            _ =>         role_count[0] += 1,
+        match is_pair(cards){
+            Some(Role::FourCard) => role_count[4] += 1,
+            Some(Role::ThreeCard) => role_count[3] += 1,
+            Some(Role::TwoPair) => role_count[2] += 1,
+            Some(Role::OnePair) => role_count[1] += 1,
+            Some(Role::NoPair) => role_count[0] += 1,
+            _ => (),
         }
     } 
-
-    Ok(())
 }
 
 /// デバッグ用に，それぞれの役が出る確率を計算して表示します．
@@ -337,16 +345,12 @@ where
 
     for _ in 0..loop_num{
         //カードをランダムに5枚選び出す（idのみ）
-        let cards = handout_cards(use_cards);
+        let cards = handout_cards(use_cards)?;
         //idからCard型を生成する
         let mut cards = make_cards_from_id(&cards);
         // 役判定を行う
-        match count_judge_role(&mut cards, &mut role_count) {
-            Ok(_) => (),
-            Err(e) => {
-                return Err(anyhow!("{:?}",e));
-            }
-        }
+
+        count_judge_role(&mut cards, &mut role_count);
     }
 
     let sum_score = calc_score(&role_count);
