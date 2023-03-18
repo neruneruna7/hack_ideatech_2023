@@ -1,12 +1,10 @@
 //! ポーカーモジュール 個々の役を判定する関数は，事前にrankの順にソートされていることを前提としています．
 
-//use rand::prelude::*;
-//use rand::rngs::SmallRng;
 use rand::{thread_rng, Rng};
 use rustc_hash::FxHashMap;
 use std::{convert::TryInto};
 use num_derive::FromPrimitive;
-
+use anyhow::{anyhow, Error, Result, Context};
 
 //mod test;
 
@@ -44,6 +42,8 @@ pub enum Role {
     RoyalStraightFlush,
 }
 
+type PorkerResult<T> = anyhow::Result<T>;
+
 impl Card {
     ///IDを渡すことで，スートとランクを計算し，Card型を生成します．
     pub fn new<T>(id: T) -> Self
@@ -51,7 +51,7 @@ impl Card {
         T: TryInto<u32>,
         <T as std::convert::TryInto<u32>>::Error: std::fmt::Debug,
     {
-        let id = id.try_into().unwrap();
+        let id = id.try_into().expect("Error can't convert to u32");
         let suit = num::FromPrimitive::from_u32(id / 13).unwrap();
         let rank = (id % 13) + 1;
         Self { id, suit, rank}
@@ -122,7 +122,7 @@ pub fn handout_cards(use_cards: &Vec<u32>) -> [u32; 5] {
 
 /// 同じランクのカードが何枚あるかを数え，その枚数に応じたRoleを返します．
 /// Roleを返せない場合，明確にエラーである（同じランクのカードが5枚以上あることになる）ため，Result型でエラーを返します．
-pub fn is_pair(cards: &[Card; 5]) -> Result<Role, &str> {
+pub fn is_pair(cards: &[Card; 5]) -> PorkerResult<Role> {
     // 同じランクのカードが何枚あるかを数える．
     // 大幅な仕様変更がありました．
     let pair_count = (0..5)
@@ -142,7 +142,7 @@ pub fn is_pair(cards: &[Card; 5]) -> Result<Role, &str> {
             }
         },
         1 => Ok(Role::NoPair),
-        _ => Err("Error: invalid pair_num 同じランクのカードの枚数が5枚以上ではありませんか？"),
+        _ => Err(anyhow!("同じランクのカードが5枚以上あります")),
     }
 }
 
@@ -261,7 +261,7 @@ pub fn is_fulhouse(cards: &mut [Card; 5]) -> Option<Role> {
 }
 
 /// 役判定を行います.
-pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) {
+pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) -> Result<(),  Box<dyn std::error::Error>>{
     // 事前にカード配列をソートしておく
     // カード配列をrankをキーにソート． 安定ソートである必要はないため，unstable で不安定ソートを使うことにより高速化
     cards.sort_unstable_by(|a, b| a.rank.cmp(&b.rank));
@@ -276,7 +276,8 @@ pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) {
         role_count[6] += 1;
     } else if is_fulhouse(cards).is_some() {
         role_count[5] += 1;
-    } else if let Ok(r) = is_pair(cards) {
+    } else {
+        let r = is_pair(cards)?; 
         match r {
             Role::FourCard => role_count[4] += 1,
             Role::ThreeCard => role_count[3] += 1,
@@ -285,6 +286,8 @@ pub fn count_judge_role(cards: &mut [Card; 5], role_count: &mut [u32; 10]) {
             _ =>         role_count[0] += 1,
         }
     } 
+
+    Ok(())
 }
 
 /// デバッグ用に，それぞれの役が出る確率を計算して表示します．
@@ -313,12 +316,17 @@ pub fn debug_judge_role(role_count: &[u32; 10], total_num_of_atempt: u32) {
 /// 必要な処理がひとまとめになった関数です．
 /// 回数制限，手札選び，役判定，指定回数ループ，スコア計算
 /// 事実上，pubキーワードはこの関数にのみついていれば問題ありません．
-pub fn million_porker<T>(use_cards: &Vec<u32>, num: T) -> ([u32;10], u32, u32)
+pub fn million_porker<T>(use_cards: &Vec<u32>, num: T) -> PorkerResult<([u32;10], u32, u32)>
 where
     T: TryInto<u32>,
     <T as std::convert::TryInto<u32>>::Error: std::fmt::Debug,
 {   
-    let num:u32 = num.try_into().expect("ERR 回数を整数に変換できません");
+    let num:u32 = match num.try_into() {
+        Ok(n) => n,
+        Err(e) => {
+            return Err(anyhow!("{:?}",e));
+        }
+    }; 
 
     //ループ回数が100万回を超えていたら，100万回まで減らす
     let loop_num = if num > 1_000_000 {
@@ -334,13 +342,18 @@ where
         let cards = handout_cards(use_cards);
         //idからCard型を生成する
         let mut cards = make_cards_from_id(&cards);
-
-        count_judge_role(&mut cards, &mut role_count);
+        // 役判定を行う
+        match count_judge_role(&mut cards, &mut role_count) {
+            Ok(_) => (),
+            Err(e) => {
+                return Err(anyhow!("{:?}",e));
+            }
+        }
     }
 
     let sum_score = calc_score(&role_count);
     
-    (role_count, sum_score, loop_num)
+    Ok((role_count, sum_score, loop_num))
 }
 
 /// 総スコアを計算します．
@@ -357,10 +370,10 @@ pub fn calc_score(role_count: &[u32;10]) -> u32 {
         ストレートフラッシュ,
         ロイヤルストレートフラッシュ, 
     */
-    const SCRE_SHEET:[u32;10] = [1, 5, 10, 20, 100, 150, 200, 500, 800, 1500];
+    const SCORE_SHEET:[u32;10] = [1, 5, 10, 20, 100, 150, 200, 500, 800, 1500];
 
     let sum_score:u32 = role_count.iter()
-        .zip(SCRE_SHEET.iter())
+        .zip(SCORE_SHEET.iter())
         .map(|x| x.0 * x.1)
         .sum();
 

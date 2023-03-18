@@ -74,11 +74,13 @@ impl Response {
 /// 実行時間の都合上，最大回数を100万回に制限しています．
 #[post["/postcards"]]
 async fn judge_porker(request: web::Json<Request>) -> impl Responder {
-    let (role_count, sum_score, loop_num) = porker::million_porker(&request.useCards, request.num);
-
-    porker::debug_judge_role(&role_count, loop_num);
-
-    HttpResponse::Ok().json(Response::new(sum_score, loop_num, role_count))
+    match porker::million_porker(&request.useCards, request.num) {
+        Ok((role_count, sum_score, loop_num)) => {
+            porker::debug_judge_role(&role_count, loop_num);
+            return HttpResponse::Ok().json(Response::new(sum_score, loop_num, role_count));
+        }
+        Err(e) => HttpResponse::BadRequest().body(format!("{}", e)),
+    }
 }
 
 ///テスト用の関数です．特に意味はありません．helloを返します．
@@ -90,7 +92,12 @@ async fn get_index() -> impl Responder {
 ///テスト用の関数です．特に意味はありません．401コードを返します．
 #[get["/Una"]]
 async fn una() -> impl Responder {
-    HttpResponse::Unauthorized().body("401 Unauthrized")
+    let a = 1;
+    if a == 1 {
+        HttpResponse::Ok().body("hello");
+    } else {
+        HttpResponse::Unauthorized().body("401 Unauthrized");
+    }
 }
 
 ///エントリーポイントです．
