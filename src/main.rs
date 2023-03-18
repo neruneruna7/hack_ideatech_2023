@@ -1,10 +1,12 @@
 //! ideaxtechで作ったソースコードです．Cargo docコマンドを使ってみようということで，一応ドキュメントにしてみました．
 
-use actix_web::middleware::Logger;
+// Consolas, 'Courier New', monospace,
+
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 //use std::time;
 
+//mod database;
 mod porker;
 
 /// POSTされたデータを受け取るための構造体です．
@@ -13,7 +15,7 @@ mod porker;
 //allowアトリビュートで名前がスネークケースでない警告を無視
 #[derive(Deserialize)]
 #[allow(non_snake_case)]
-struct Request {
+pub struct Request {
     num: u32,
     useCards: Vec<u32>,
 }
@@ -39,7 +41,7 @@ struct ResultRole {
 /// 総スコア，回数，それぞれの役の出現回数
 #[derive(Serialize)]
 #[allow(non_snake_case)]
-struct Response {
+pub struct Response {
     allscore: u32,
     number: u32,
     result: ResultRole,

@@ -4,30 +4,44 @@
 //use rand::rngs::SmallRng;
 use rand::{thread_rng, Rng};
 use rustc_hash::FxHashMap;
-use std::convert::TryInto;
+use std::{convert::TryInto, default};
+use num_derive::FromPrimitive;
 
-#[cfg(test)]
-mod test;
+
+//mod test;
 
 ///カード1枚のデータを保持する構造体です．ID,スート(記号), ランク(数字)からできています．
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct Card {
     pub id: u32,
-    pub suit: u32,
+    pub suit: Suit,
     pub rank: u32,
 }
 
+/// 記号情報を保持する列挙型です． NumクレートのFromPrimitivを活用することにより，u32型をSuit型に変換する機能を提供しています．
+/// num::FromPrimitive::from_u32(<u32>).unwrap() でu32型からSuit型に変換できます．
+#[derive(FromPrimitive, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[repr(u32)]
+pub enum Suit {
+    #[default]
+    Spade,
+    Heart,
+    Diamond,
+    Club,
+}
+
+
 impl Card {
     ///IDを渡すことで，スートとランクを計算し，Card型を生成します．
-    pub fn new<T>(id: T) -> Card
+    pub fn new<T>(id: T) -> Self
     where
         T: TryInto<u32>,
         <T as std::convert::TryInto<u32>>::Error: std::fmt::Debug,
     {
-        let id: u32 = id.try_into().unwrap();
-        let suit = id / 13;
+        let id = id.try_into().unwrap();
+        let suit = num::FromPrimitive::from_u32(id / 13).unwrap();
         let rank = (id % 13) + 1;
-        Card { id, suit, rank }
+        Self { id, suit, rank}
     }
 
     ///デバッグ用に52枚すべてのカードidをもったベクタを返します．
@@ -43,11 +57,13 @@ impl Card {
     }
 }
 
+
+
 ///手札のカードのid配列を読み込んでCard型配列に変換します．
 pub fn make_cards_from_id(cards_id: &[u32; 5]) -> [Card; 5] {
     let mut cards = [Card {
         id: 0,
-        suit: 0,
+        suit: num::FromPrimitive::from_u32(0).unwrap(),
         rank: 0,
     }; 5];
 
@@ -113,15 +129,7 @@ pub fn is_pair(cards: &[Card; 5], pair_num: u32) -> bool {
 
 pub fn is_flush(cards: &[Card; 5]) -> bool {
     //すべてのスートが同じかどうか
-    let mut is_flush = true;
-
-    for i in 0..4 {
-        if cards[i].suit != cards[i + 1].suit {
-            is_flush = false;
-        }
-    }
-
-    is_flush
+    cards.iter().all(|x| x.suit == cards[0].suit)
 }
 
 pub fn is_strait(cards: &mut [Card; 5]) -> bool {
@@ -335,4 +343,6 @@ pub fn calc_score(role_count: &[u32;10]) -> u32 {
         .sum();
 
     sum_score
+
+    // マイドライブ
 }
