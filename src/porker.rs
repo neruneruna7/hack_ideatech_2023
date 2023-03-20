@@ -132,9 +132,9 @@ pub fn handout_cards(use_cards: &Vec<u32>) -> PorkerResult<[u32; 5]> {
 
 /// 同じランクのカードが何枚あるかを数え，その枚数に応じたRoleを返します．
 // 途中までResult型を返していましたが，設計上のミスだったためOption型を返すようになりました
+// 列挙型の使用に伴い大幅な仕様変更がありました. boolを返さず．データが意味を持つようになりました．
 pub fn is_pair(cards: &[Card; 5]) -> Option<Role> {
     // 同じランクのカードが何枚あるかを数える．
-    // 大幅な仕様変更がありました．
     let pair_count = (0..5)
         .map(|i| cards.iter().filter(|x| x.rank == cards[i].rank).count())
         .max()
