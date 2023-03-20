@@ -380,5 +380,4 @@ pub fn calc_score(role_count: &[u32;10]) -> u32 {
         .sum();
 
     sum_score
-
 }
